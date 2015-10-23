@@ -22,5 +22,13 @@ require(['underscore'], function (_) {
 });
 ```
 
+同时加载多个模块
+
+```javascript
+require(['underscore', 'jquery'], function (_, $) {
+    // 当前underscore.js和jquery.js都加载完后，执行这里
+});
+```
+
 
 
