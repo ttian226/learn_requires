@@ -10,7 +10,9 @@ var requirejs, require, define;
         hasOwn = op.hasOwnProperty,
         isBrowser = !!(typeof window !== 'undefined' && typeof navigator !== 'undefined' && window.document),
         cfg = {},
-        jsSuffixRegExp = /\.js$/;
+        jsSuffixRegExp = /\.js$/,
+        defContextName = '_',
+        contexts = {};
 
 
     function isArray(it) {
@@ -22,7 +24,7 @@ var requirejs, require, define;
     }
 
     function getOwn(obj, prop) {
-        return hasOwn(obj, prop) && obj[prop];
+        return hasProp(obj, prop) && obj[prop];
     }
 
     function eachReverse(ary, func) {
@@ -40,19 +42,60 @@ var requirejs, require, define;
         return document.getElementsByTagName('script');
     }
 
+    function newContext(contextName) {
+        var context;
+
+        context = {
+            configure: function (cfg) {
+            },
+            makeRequire: function () {
+                function localRequire(deps, callback, errback) {
+
+                }
+                return localRequire;
+            }
+        };
+
+        context.require = context.makeRequire();
+        return context;
+    }
+
     /**
      * 主入口
      *
      */
     req = requirejs = function (deps, callback, errback, optional) {
+        var context, config,
+            contextName = defContextName;
 
+        if (!isArray(deps) && typeof deps !== 'string') {
+            config = deps;
+        }
+
+        if (config && config.context) {
+
+        }
+
+        context = getOwn(contexts, contextName);
+        if (!context) {
+            context = contexts[contextName] = req.s.newContext(contextName);
+        }
+
+        if (config) {
+            context.configure(config);
+        }
+
+        return context.require(deps, callback, errback);
     };
 
     req.version = version;
 
     req.jsExtRegExp = /^\/|:|\?|\.js$/;
 
-    s = {};
+    s = req.s = {
+        contexts: contexts,
+        newContext: newContext
+    };
 
     if (isBrowser) {
         head = s.head = document.getElementsByTagName('head')[0];
