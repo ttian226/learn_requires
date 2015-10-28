@@ -91,8 +91,22 @@ var requirejs, require, define;
         return document.getElementsByTagName('script');
     }
 
+    if (typeof define !== 'undefined') {
+        // 如果define已经通过其它的AMD加载器定义了，则无法覆盖
+        return;
+    }
+
+    if (typeof requirejs !== 'undefined') {
+        if (isFunction(requirejs)) {
+            // 不能覆盖已经存在的requirejs实例
+            return;
+        }
+        cfg = requirejs;
+        requirejs = undefined;
+    }
+
     function newContext(contextName) {
-        var context,
+        var context, Module,
             config = {
                 waitSeconds: 7,
                 baseUrl: './',
@@ -102,8 +116,42 @@ var requirejs, require, define;
                 shim: {},
                 config: {}
             },
+            undefEvents = {},
+            registry = {},
+            defined = {},
+            urlFetched = {},
+            defQueue = [];
+
+        function makeModuleMap() {
+
+        }
+
+        function onError() {
+
+        }
+
+        Module = function (map) {
+
+        };
+
+        Module.prototype = {
+
+        };
 
         context = {
+            config: config,
+            contextName: contextName,
+            registry: registry,
+            defined: defined,
+            urlFetched: urlFetched,
+            defQueue: defQueue,
+            defQueueMap: {},
+            Module: Module,
+            makeModuleMap: makeModuleMap,
+            nextTick: req.nextTick,
+            onError: onError,
+
+            // 第一次req({})时，这里的cfg为空对象
             configure: function (cfg) {
                 // 确保baseUrl以`/`结尾
                 if (cfg.baseUrl) {
@@ -147,13 +195,34 @@ var requirejs, require, define;
 
                 }
 
+                eachProp(registry, function (mod, id) {
+
+                });
+
                 if (cfg.deps || cfg.callback) {
                     context.require(cfg.deps || [], cfg.callback);
                 }
             },
-            makeRequire: function () {
-                function localRequire(deps, callback, errback) {
+            makeRequire: function (relMap, options) {
+                // 在第一次被调用时（即req({})时）初始化makeRequire内部上下文
+                options = options || {};
 
+                function localRequire(deps, callback, errback) {
+                    if (typeof deps === 'string') {
+
+                    }
+                }
+
+                // 给localRequire合并属性
+                mixin(localRequire, {
+                    isBrowser: isBrowser,
+                    toUrl: function () {},
+                    defined: function () {},
+                    specified: function () {}
+                });
+
+                if (!relMap) {
+                    localRequire.undef = function () {};
                 }
                 return localRequire;
             }
@@ -184,8 +253,10 @@ var requirejs, require, define;
 
         }
 
+        // 只有当req({})执行时,context=false
         context = getOwn(contexts, contextName);
         if (!context) {
+            // 这里只在req({})时执行一次
             context = contexts[contextName] = req.s.newContext(contextName);
         }
 
@@ -196,6 +267,14 @@ var requirejs, require, define;
         //return context.require(deps, callback, errback);
     };
 
+    req.config = function (config) {
+        return req(config);
+    };
+
+    req.nextTick = typeof setTimeout !== 'undefined' ? function (fn) {
+        setTimeout(fn, 4);
+    } : function (fn) { fn(); };
+
     req.version = version;
 
     req.jsExtRegExp = /^\/|:|\?|\.js$/;
@@ -205,7 +284,7 @@ var requirejs, require, define;
         newContext: newContext
     };
 
-    //req({});
+    req({});
 
     if (isBrowser) {
         head = s.head = document.getElementsByTagName('head')[0];
@@ -240,6 +319,6 @@ var requirejs, require, define;
         });
     }
 
-    req(cfg);
+    //req(cfg);
 
 }(this));
