@@ -120,10 +120,56 @@ var requirejs, require, define;
             registry = {},
             defined = {},
             urlFetched = {},
-            defQueue = [];
+            defQueue = [],
+            requireCounter = 1;
 
-        function makeModuleMap() {
+        function normalize(name, baseName, applyMap) {
+            return name;
+        }
 
+        function splitPrefix(name) {
+            var prefix,
+                index = name ? name.indexOf('!') : -1;
+            if (index > -1) {
+
+            }
+            return [prefix, name];
+        }
+
+        function makeModuleMap(name, parentModuleMap, isNormalized, applyMap) {
+            var nameParts,
+                prefix = null,
+                parentName = parentModuleMap ? parentModuleMap.name : null,
+                isDefine = true,
+                normalizedName = '';
+
+            if (!name) {
+                isDefine = false;
+                // 首次调用name='_@r2'
+                name = '_@r' + (requireCounter += 1);
+            }
+
+            // 首次调用nameParts=[undefined, '_@r2']
+            nameParts = splitPrefix(name);
+            prefix = nameParts[0];
+            name = nameParts[1];
+
+            if (prefix) {
+
+            }
+
+            if (name) {
+                if (prefix) {
+
+                } else {
+                    normalizedName = normalize(name, parentName, applyMap);
+
+                    nameParts = splitPrefix(normalizedName);
+                    prefix = nameParts[0];
+                    normalizedName = nameParts[1];
+                    isNormalized = true;
+                }
+            }
         }
 
         function onError() {
@@ -137,6 +183,14 @@ var requirejs, require, define;
         Module.prototype = {
 
         };
+
+        function intakeDefines() {
+
+        }
+
+        function getModule(depMap) {
+
+        }
 
         context = {
             config: config,
@@ -207,10 +261,24 @@ var requirejs, require, define;
                 // 在第一次被调用时（即req({})时）初始化makeRequire内部上下文
                 options = options || {};
 
+                // localRequire会被调用三次
+                // 第一次req({}),req中context.require被调用
+                // 第二次req(cfg),req中->context.configure(config)->context.require
+                // 第三次req(cfg),req中context.require被调用
+                // 第一个参数deps只有在第二次调用时有值（比如['main']），其它都是[]
                 function localRequire(deps, callback, errback) {
+                    var requireMod;
+
                     if (typeof deps === 'string') {
 
                     }
+
+                    intakeDefines();
+
+                    context.nextTick(function () {
+                        intakeDefines();
+
+                    });
                 }
 
                 // 给localRequire合并属性
@@ -225,6 +293,9 @@ var requirejs, require, define;
                     localRequire.undef = function () {};
                 }
                 return localRequire;
+            },
+            nameToUrl: function () {
+
             }
         };
 
@@ -254,17 +325,19 @@ var requirejs, require, define;
         }
 
         // 只有当req({})执行时,context=false
+        // 从第二次后context=contexts._
         context = getOwn(contexts, contextName);
         if (!context) {
-            // 这里只在req({})时执行一次
+            // 这里只在req({})时执行一次，执行后contexts._保存从newContext获取后的对象
             context = contexts[contextName] = req.s.newContext(contextName);
         }
 
         if (config) {
+            // 在req(cfg)执行时会走到这里
             context.configure(config);
         }
 
-        //return context.require(deps, callback, errback);
+        return context.require(deps, callback, errback);
     };
 
     req.config = function (config) {
@@ -284,6 +357,7 @@ var requirejs, require, define;
         newContext: newContext
     };
 
+    // 第一次调用，仅仅做初始化
     req({});
 
     if (isBrowser) {
@@ -319,6 +393,7 @@ var requirejs, require, define;
         });
     }
 
-    //req(cfg);
+    // 第二次调用
+    req(cfg);
 
 }(this));
