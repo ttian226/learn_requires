@@ -140,4 +140,54 @@ define(["my/cart", "my/inventory"],
 );
 ```
 
+#### 压缩代码
+
+1. 下载`r.js`文件
+2. 配置`build.js`文件，这里写入配置项
+
+app.js：
+
+```javascript
+require(['jquery', 'underscore', 'app/sub'], function ($, _, sub) {
+
+});
+```
+
+build.js：
+* paths中属性名要和入口文件的`require`方法中的第一个参数相一致`['jquery', 'underscore', 'app/sub']`
+* paths中的值是基于`baseUrl`的
+* name是入口js文件，也是基于`baseUrl`的
+* out是压缩后的js文件，路径是和r.js同级的
+
+```javascript
+({
+    baseUrl: "js/lib",
+    paths: {
+        jquery: "jquery",
+        underscore: "underscore",
+        'app/sub': '../app/sub'
+    },
+    name: "../app",
+    out: "app-built.js"
+})
+```
+
+目录结构如下：
+* www
+    - index.html
+    - js/
+        + app/
+            * sub.js
+        + lib/
+            * jquery.js
+            * underscore.js
+        + app.js
+        + require.js
+    - r.js
+    - build.js
+
+最后，使用`node r.js -o build.js`命令来压缩代码。
+
+
+
 
